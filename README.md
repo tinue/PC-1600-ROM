@@ -11,12 +11,17 @@ The ROM got dumped on a plain PC-1600, no additional memory modules installed.
 ## ROM versions
 
 Sharp shipped two BASIC ROM revisions; see Sharp's bulletin No. 1600-010E. On
-the PC-1600, `PRINT PEEK #(0,&7FFF)` tells them apart:
+the PC-1600, `PRINT PEEK #(0,&7FFF)` tells them apart. The machines look
+identical on the outside, so this is the only way to tell:
 
 | Version | Directory | `PEEK #(0,&7FFF)` | Status |
 |---|---|---|---|
-| **New** | [`dumps/new/`](dumps/new) | `4` or `5` | Complete (all 6 files) |
+| **New** | [`dumps/new/`](dumps/new) | `5` (dumped); `4` exists but is still missing | Complete (all 6 files), from a `5` machine |
 | **Old** | [`dumps/old/`](dumps/old) | `130` | Complete (all 6 files), dumped twice — see [Old ROM](#old-rom) |
+
+The `4` variant of the new ROM has not been dumped yet, so a dump from a
+machine that reports `4` is the most wanted one. Further dumps of the old
+(`130`) ROM can only confirm what is already here.
 
 The tables below describe the **new** ROM's files. The old ROM uses the same
 file names.
@@ -49,6 +54,19 @@ Want to dump the ROM of your own PC-1600? Follow the step-by-step guide in
 |---|---|
 | `dumps/peripherals/PC1600-P1-B4-CE1600P.BIN` | Page 1, Bank 4 — CE-1600P printer/plotter ROM |
 | `dumps/peripherals/PC1600-P1-B5-CE1600P-OR-F.BIN` | Page 1, Bank 5 — CE-1600P floppy/cassette ROM (see note below) |
+| `dumps/peripherals/PC1600-P1_B4-old.BIN` | Page 1, Bank 4 — same, from the older peripheral version |
+| `dumps/peripherals/PC1600-P1_B5-old.BIN` | Page 1, Bank 5 — same, from the older peripheral version |
+
+There are at least two versions of the peripheral code. With the peripheral
+attached, `PRINT PEEK #(5,&7FFE)` and `PRINT PEEK #(5,&7FFF)` tell them apart
+(the last two bytes of the Bank 5 file). If you own a CE-1600P, please check
+it as well, and dump it if it differs from both versions listed here (see the
+[dumping guide](DUMPING.md)):
+
+| Version | Files | `PEEK #(5,&7FFE)` / `PEEK #(5,&7FFF)` |
+|---|---|---|
+| Current | `PC1600-P1-B4-CE1600P.BIN`, `PC1600-P1-B5-CE1600P-OR-F.BIN` | `5` / `18` (`05 12` hex) |
+| Older | `PC1600-P1_B4-old.BIN`, `PC1600-P1_B5-old.BIN` | `4` / `16` (`04 10` hex) |
 
 Each `.BIN` file is exactly 16384 bytes (16KB).
 
@@ -80,6 +98,8 @@ bddbb8bbf0b2bd2d95038f67b8d002ac  dumps/new/PC1600-P1-B0.BIN
 2483319acf35da4e848e59ab954abf46  dumps/new/PC1600-P1-B3B.BIN
 05548a8dda3e572d50d4bd281a650ea8  dumps/peripherals/PC1600-P1-B4-CE1600P.BIN
 a675c6dbdf7dc4c10e8d96891e196f8f  dumps/peripherals/PC1600-P1-B5-CE1600P-OR-F.BIN
+df41b050acbc29c83214cbaaf29bee91  dumps/peripherals/PC1600-P1_B4-old.BIN
+33f3ef7207eac06587cc4c6d70c6cbd0  dumps/peripherals/PC1600-P1_B5-old.BIN
 86cb9036da284de2b04c7946d140a9fd  dumps/new/PC1600-P2-B6.BIN
 56168830b46d637b08529a74609bee3f  dumps/new/PC1600-LH5803-C000-FFFF.BIN
 ```
@@ -100,8 +120,10 @@ second dump (16-bit sum `0x5AF6`, matching the sum on receipt).
 - The last byte of each probe page matches the values Sharp's bulletin gives
   for the old ROM: `82H` in `P1-B0`, `A1H` in `P2-B6`, `C1H` in `P1-B3`.
 - Only the six files below are kept. The two CE-1600P pages (Bank 4 and
-  Bank 5) were dumped without a CE-1600P attached and contain no peripheral
-  ROM, so they were not kept.
+  Bank 5) from this dump were taken without a CE-1600P attached and contain
+  no peripheral ROM, so they were not kept. The peripheral ROMs are in
+  `dumps/peripherals/` (see above); they do not depend on the calculator's
+  ROM version.
 
 ```
 5afcc22134e106bfd63b899febe9df7c  dumps/old/PC1600-P0-B0.BIN
@@ -186,14 +208,15 @@ menu's send option, type:
 ```
 SETCOM"COM1:",9600,8,N,1,N,N
 OUTSTAT"COM1:"
-SNDSTAT"COM1:",24,60
-RCVSTAT"COM1:",24,60
+SNDSTAT"COM1:",28
+RCVSTAT"COM1:",28
 INIT"COM1:",4096
 ```
 
-(`24` enables CTS hardware flow control, which real PC-1600 hardware
-supports and should use. `OUTSTAT` with no parameter enables dynamic
-RTS/DTR flow control.)
+(`28` disables RTS/CTS hardware flow control, which does not work on many
+USB-to-serial setups; `sde` 0.2.2 or newer paces the transfer itself. To use
+hardware flow control anyway, pass `--flowcontrol` to `sde` and use `24`
+instead. `OUTSTAT` with no parameter enables dynamic RTS/DTR flow control.)
 
 ### 4. Run the dumper and capture each page
 

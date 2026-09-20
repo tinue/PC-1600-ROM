@@ -7,17 +7,42 @@ You will end up with eight files of 16 KB each.
 
 The dumps in [`dumps/new/`](dumps/new) come from the **newer** ROM version,
 which is the one in nearly every PC-1600. An **older** version exists, but it
-is rare. It is in [`dumps/old/`](dumps/old) (dumped twice, files identical). To find out which version you have, type this on
-the PC-1600:
+is rare. It is in [`dumps/old/`](dumps/old) (dumped twice, files identical). To
+find out which version you have, type this on the PC-1600. The machines look
+identical on the outside, so only this command tells them apart:
 
 ```
 PRINT PEEK #(0,&7FFF)
 ```
 
-- `4` or `5`: the newer version. Your files should be identical to the ones in
-  [`dumps/new/`](dumps/new).
-- `130`: the older, rare version. Your files should be compared with
-  [`dumps/old/`](dumps/old), and please share them if they differ.
+- `5`: the newer version. The files in [`dumps/new/`](dumps/new) come from a
+  machine like this, so yours should be identical. A second dump only confirms.
+- `4`: **also the newer version, and the one still missing.** Nobody has dumped
+  it yet. If you get `4`, please share your files, even if they turn out to be
+  identical to `dumps/new/`.
+- `130`: the older, rare version. It is already in
+  [`dumps/old/`](dumps/old), so a further dump can only confirm it.
+
+### Peripheral version
+
+The CE-1600P has its own code, and there are at least two versions of it. It is
+independent of the calculator's ROM version above. **If you own a CE-1600P,
+please check it too**, and dump it if it differs from both versions we have.
+Connect it to the PC-1600 and type:
+
+```
+PRINT PEEK #(5,&7FFE), PEEK #(5,&7FFF)
+```
+
+- `5` and `18`: the version in [`dumps/peripherals/`](dumps/peripherals)
+  (`PC1600-P1-B4-CE1600P.BIN`, `PC1600-P1-B5-CE1600P-OR-F.BIN`).
+- `4` and `16`: the older version, also in `dumps/peripherals/`
+  (`PC1600-P1_B4-old.BIN`, `PC1600-P1_B5-old.BIN`).
+- Anything else: a version nobody has dumped yet. Please dump it (option `2`
+  sends the peripheral pages too) and share the files.
+
+If your CE-1600P matches one of the two versions above, there is no need to
+share its files.
 
 ## What you need
 
@@ -32,7 +57,7 @@ PRINT PEEK #(0,&7FFF)
 
 On your computer:
 
-1. **`sde`**, the transfer tool: go to the
+1. **`sde`**, the transfer tool (version 0.2.2 or newer): go to the
    [SharpDataExchange releases page](https://github.com/tinue/SharpDataExchange/releases),
    download the archive for your system, and unpack it. Put `bin/sde`
    somewhere on your `PATH`, or simply run it from where you unpacked it.
@@ -60,10 +85,14 @@ port by typing these lines:
 NEW"S0:",&B00
 SETCOM"COM1:",9600,8,N,1,N,N
 OUTSTAT"COM1:"
-SNDSTAT"COM1:",24
-RCVSTAT"COM1:",24
+SNDSTAT"COM1:",28
+RCVSTAT"COM1:",28
 INIT"COM1:",8192
 ```
+
+The `28` in `SNDSTAT` and `RCVSTAT` switches off RTS/CTS hardware flow control.
+Many USB-to-serial adapters do not handle it reliably, so `sde` (version 0.2.2
+or newer) paces the transfer itself instead.
 
 ## 4. Load the dumper onto the PC-1600
 
@@ -133,10 +162,10 @@ every page you do not want to send again.
 You now have eight `.BIN` files, each exactly 16384 bytes. You can check them
 against the MD5 list in the [README](README.md#verification) (for example
 `md5 file.BIN` on a Mac, `md5sum file.BIN` on Linux,
-`certutil -hashfile file.BIN MD5` on Windows). With the newer
-version (`4` or `5` above), all checksums should match. If a file differs, dump
-it a second time: if you get the same result twice, the dump is good, and you
-probably have the rare older version.
+`certutil -hashfile file.BIN MD5` on Windows). With a `5`
+machine, all checksums should match. If a file differs, dump it a second
+time: if you get the same result twice, the dump is good. Then you have either
+the missing `4` version or the older `130` one, whichever your `PEEK` showed.
 
 ## Notes
 
@@ -149,7 +178,12 @@ probably have the rare older version.
 - **`ERROR 142` on the PC-1600.** Most likely one of the serial setup commands
   from step 3 went wrong, or the PC-1600 was reset in the meantime. Type the
   setup commands again (`SETCOM`, `OUTSTAT`, `SNDSTAT`, `RCVSTAT`, `INIT`) and
-  retry.
+  retry. Make sure `SNDSTAT` and `RCVSTAT` use `28`, and that your `sde` is
+  version 0.2.2 or newer.
+- **Hardware flow control (optional).** It is off by default because it does not
+  work on many systems. If you want to try it, add `--flowcontrol` to the `sde`
+  commands and use `24` instead of `28` in `SNDSTAT` and `RCVSTAT`. The two
+  sides must match.
 - **Start the receiver first.** The PC-1600 does not buffer: if `sde get` is
   not already waiting when you press the key, data is lost.
 - **Stopping the dumper.** It has no quit key. To abort a send, press `BREAK`
