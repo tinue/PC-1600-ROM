@@ -1,12 +1,31 @@
 # Sharp PC-1600 ROM dumps
 
-This submission contains a dump of the Sharp PC-1600's internal
+This repository contains dumps of the Sharp PC-1600's internal
 ROM (both CPUs — the Z-80-compatible SC7852 and the LH-5803 co-processor)
-and its CE-1600P peripheral ROM, plus the tool used to produce it. Everything
-here was captured directly from a European PC-1600 / PC-1600P / PC-1600F over its
-built-in serial port (`COM1:`). As this is a European unit, no kanji ROM is present.
+and, kept separately, the ROM of the CE-1600P peripheral, plus the tool used
+to produce them. Everything here was captured directly from a European PC-1600 /
+PC-1600P / PC-1600F over its built-in serial port (`COM1:`). As this is a European unit, no kanji ROM is present.
 
 The ROM got dumped on a plain PC-1600, no additional memory modules installed.
+
+## ROM versions
+
+Sharp shipped two BASIC ROM revisions; see Sharp's bulletin No. 1600-010E. On
+the PC-1600, `PRINT PEEK #(0,&7FFF)` tells them apart:
+
+| Version | Directory | `PEEK #(0,&7FFF)` | Status |
+|---|---|---|---|
+| **New** | [`dumps/new/`](dumps/new) | `4` or `5` | Complete (all 6 files) |
+| **Old** | [`dumps/old/`](dumps/old) | `130` | Complete (all 6 files), dumped twice — see [Old ROM](#old-rom) |
+
+The tables below describe the **new** ROM's files. The old ROM uses the same
+file names.
+
+The calculator ROM (`dumps/new/`, `dumps/old/`) and peripheral ROMs
+([`dumps/peripherals/`](dumps/peripherals)) are independent. A peripheral's
+ROM lives in the peripheral itself, not in the calculator, and is independent
+of the calculator's ROM version. If more peripheral ROMs turn up, each gets
+its own file there.
 
 Want to dump the ROM of your own PC-1600? Follow the step-by-step guide in
 [`DUMPING.md`](DUMPING.md).
@@ -17,20 +36,25 @@ Want to dump the ROM of your own PC-1600? Follow the step-by-step guide in
 |---|---|
 | `dumper/pc1600-rom-dumper.asm` | Z-80 assembly source for the dumper program (zasm dialect) |
 | `dumper/pc1600-rom-dumper.bin` | Assembled machine-language binary, ready to load at `C0C5H` |
-| `dumps/PC1600-P0-B0.BIN` | Page 0 (0000H–3FFFH), Bank 0 — main system ROM (always resident) |
-| `dumps/PC1600-P1-B0.BIN` | Page 1 (4000H–7FFFH), Bank 0 — system ROM continuation |
-| `dumps/PC1600-P1-B3.BIN` | Page 1, Bank 3 — system ROM (CS24 chip, normal half) |
-| `dumps/PC1600-P1-B3B.BIN` | Page 1, Bank 3b — "hidden BASIC ROM" (CS24 chip, other half, selected via Port 3DH bit 2) |
-| `dumps/PC1600-P1-B4-CE1600P.BIN` | Page 1, Bank 4 — CE-1600P printer/plotter ROM |
-| `dumps/PC1600-P1-B5-CE1600P-OR-F.BIN` | Page 1, Bank 5 — CE-1600P floppy/cassette ROM (see note below) |
-| `dumps/PC1600-P2-B6.BIN` | Page 2 (8000H–BFFFH), Bank 6 — system ROM (CS123 chip, Z-80-visible half) |
-| `dumps/PC1600-LH5803-C000-FFFF.BIN` | LH-5803 co-processor's own private ROM (LH-5803 view C000H–FFFFH) — see note below |
+| `dumps/new/PC1600-P0-B0.BIN` | Page 0 (0000H–3FFFH), Bank 0 — main system ROM (always resident) |
+| `dumps/new/PC1600-P1-B0.BIN` | Page 1 (4000H–7FFFH), Bank 0 — system ROM continuation |
+| `dumps/new/PC1600-P1-B3.BIN` | Page 1, Bank 3 — system ROM (CS24 chip, normal half) |
+| `dumps/new/PC1600-P1-B3B.BIN` | Page 1, Bank 3b — "hidden BASIC ROM" (CS24 chip, other half, selected via Port 3DH bit 2) |
+| `dumps/new/PC1600-P2-B6.BIN` | Page 2 (8000H–BFFFH), Bank 6 — system ROM (CS123 chip, Z-80-visible half) |
+| `dumps/new/PC1600-LH5803-C000-FFFF.BIN` | LH-5803 co-processor's own private ROM (LH-5803 view C000H–FFFFH) — see note below |
+
+### Peripheral ROMs
+
+| File | What it is |
+|---|---|
+| `dumps/peripherals/PC1600-P1-B4-CE1600P.BIN` | Page 1, Bank 4 — CE-1600P printer/plotter ROM |
+| `dumps/peripherals/PC1600-P1-B5-CE1600P-OR-F.BIN` | Page 1, Bank 5 — CE-1600P floppy/cassette ROM (see note below) |
 
 Each `.BIN` file is exactly 16384 bytes (16KB).
 
-The first 7 were each read starting at the page's base address while that
+The first 5 calculator files and the two peripheral files were each read starting at the page's base address while that
 bank was paged in via the PC-1600's `BANKSET` IOCS routine (and, for Bank
-3b, Port 3DH). The 8th, `PC1600-LH5803-C000-FFFF.BIN`, is different: it's
+3b, Port 3DH). The last calculator file, `PC1600-LH5803-C000-FFFF.BIN`, is different: it's
 the *other* half of the same physical chip as `PC1600-P2-B6.BIN` (CS123
 selects both), and the Z-80 side has no port combination that reaches it —
 only the LH-5803 co-processor itself can read it, via its own address bus.
@@ -50,20 +74,43 @@ just the peripheral attribution is unconfirmed.
 MD5 checksums of the `.BIN` dumps as captured:
 
 ```
-404bf6f2df489e09649167078acd9a25  dumps/PC1600-P0-B0.BIN
-bddbb8bbf0b2bd2d95038f67b8d002ac  dumps/PC1600-P1-B0.BIN
-6f6e1a9d46db7dc91d4322c93583ac81  dumps/PC1600-P1-B3.BIN
-2483319acf35da4e848e59ab954abf46  dumps/PC1600-P1-B3B.BIN
-05548a8dda3e572d50d4bd281a650ea8  dumps/PC1600-P1-B4-CE1600P.BIN
-a675c6dbdf7dc4c10e8d96891e196f8f  dumps/PC1600-P1-B5-CE1600P-OR-F.BIN
-86cb9036da284de2b04c7946d140a9fd  dumps/PC1600-P2-B6.BIN
-56168830b46d637b08529a74609bee3f  dumps/PC1600-LH5803-C000-FFFF.BIN
+404bf6f2df489e09649167078acd9a25  dumps/new/PC1600-P0-B0.BIN
+bddbb8bbf0b2bd2d95038f67b8d002ac  dumps/new/PC1600-P1-B0.BIN
+6f6e1a9d46db7dc91d4322c93583ac81  dumps/new/PC1600-P1-B3.BIN
+2483319acf35da4e848e59ab954abf46  dumps/new/PC1600-P1-B3B.BIN
+05548a8dda3e572d50d4bd281a650ea8  dumps/peripherals/PC1600-P1-B4-CE1600P.BIN
+a675c6dbdf7dc4c10e8d96891e196f8f  dumps/peripherals/PC1600-P1-B5-CE1600P-OR-F.BIN
+86cb9036da284de2b04c7946d140a9fd  dumps/new/PC1600-P2-B6.BIN
+56168830b46d637b08529a74609bee3f  dumps/new/PC1600-LH5803-C000-FFFF.BIN
 ```
 
 The MD5s above are just a fixed reference for these specific files. The
 actual check made during capture, for every page: the 16-bit sum computed
 on the PC-1600 itself (shown on the LCD immediately before sending) and
 the 16-bit sum `sde get --raw` reports on receipt agree.
+
+## Old ROM
+
+`dumps/old/` holds the older ROM (`PEEK #(0,&7FFF)` = `130`). It was dumped
+twice; a clean second dump reproduced five of the six files bit for bit. The
+first dump's `PC1600-P1-B3B.BIN` was 16368 bytes (truncated, and wrong from
+byte 11343 on), so it was replaced by the complete 16384-byte file from the
+second dump (16-bit sum `0x5AF6`, matching the sum on receipt).
+
+- The last byte of each probe page matches the values Sharp's bulletin gives
+  for the old ROM: `82H` in `P1-B0`, `A1H` in `P2-B6`, `C1H` in `P1-B3`.
+- Only the six files below are kept. The two CE-1600P pages (Bank 4 and
+  Bank 5) were dumped without a CE-1600P attached and contain no peripheral
+  ROM, so they were not kept.
+
+```
+5afcc22134e106bfd63b899febe9df7c  dumps/old/PC1600-P0-B0.BIN
+3bcb6b178f5967c7c8e32afe560a3e75  dumps/old/PC1600-P1-B0.BIN
+ded92d8280f8f83ce3498fb9cbfb9b3d  dumps/old/PC1600-P1-B3.BIN
+2e8e075cac8f9696c5e833ceef130a4f  dumps/old/PC1600-P1-B3B.BIN
+2c977fdd8c924c1492a2c23f67a20f23  dumps/old/PC1600-P2-B6.BIN
+6005b6420bd5e191e81a1562f3242ec9  dumps/old/PC1600-LH5803-C000-FFFF.BIN
+```
 
 ---
 
@@ -184,7 +231,7 @@ directory) so the receiver output stays self-documenting.
 Start the receiver, *then* press the key on the PC-1600 to send — the
 PC-1600 doesn't buffer, so the receiver has to already be listening.
 
-Repeat for all 8 pages (7 from option 2, 1 from option 3). `sde get
+Repeat for all pages (7 from option 2, 1 from option 3). `sde get
 --raw` prints a 16-bit sum (mod 65536) of the received bytes on completion;
 compare it against the checksum the PC-1600 showed on screen for that page
 before sending. They should match — if they don't, the transfer is suspect

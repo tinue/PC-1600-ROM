@@ -5,10 +5,9 @@ saving it as files on your computer. It takes about 30 minutes.
 
 You will end up with eight files of 16 KB each.
 
-The dumps in [`dumps/`](dumps) come from the **newer** ROM version, which is
-the one in nearly every PC-1600. An **older** version exists, but it is rare,
-and it has not been dumped yet. If your PC-1600 has the older version, your
-dump is especially welcome. To find out which version you have, type this on
+The dumps in [`dumps/new/`](dumps/new) come from the **newer** ROM version,
+which is the one in nearly every PC-1600. An **older** version exists, but it
+is rare. It is in [`dumps/old/`](dumps/old) (dumped twice, files identical). To find out which version you have, type this on
 the PC-1600:
 
 ```
@@ -16,8 +15,9 @@ PRINT PEEK #(0,&7FFF)
 ```
 
 - `4` or `5`: the newer version. Your files should be identical to the ones in
-  [`dumps/`](dumps).
-- `130`: the older, rare version. Your files will differ, so please share them.
+  [`dumps/new/`](dumps/new).
+- `130`: the older, rare version. Your files should be compared with
+  [`dumps/old/`](dumps/old), and please share them if they differ.
 
 ## What you need
 
@@ -26,7 +26,7 @@ PRINT PEEK #(0,&7FFF)
   serial connector
 - A Mac, Linux or Windows computer
 - Optional: a CE-1600P printer/plotter, connected to the PC-1600. Without it,
-  two of the eight files contain only `FF` bytes (see [Notes](#notes)).
+  two of the eight files (the peripheral ROM) contain only `FF` bytes (see [Notes](#notes)).
 
 ## 1. Download the two programs
 
@@ -143,7 +143,8 @@ probably have the rare older version.
 - **Nothing on the PC-1600 is changed.** The dumper only reads the ROM. It
   lives in RAM, so `NEW` or a reset removes it.
 - **Without the CE-1600P attached**, the two pages that belong to it
-  (`PC1600-P1-B4-CE1600P.BIN` and `PC1600-P1-B5-CE1600P-OR-F.BIN`) come out
+  (`PC1600-P1-B4-CE1600P.BIN` and `PC1600-P1-B5-CE1600P-OR-F.BIN`, kept in
+  `dumps/peripherals/`) come out
   filled with `FF`. That is normal.
 - **`ERROR 142` on the PC-1600.** Most likely one of the serial setup commands
   from step 3 went wrong, or the PC-1600 was reset in the meantime. Type the
