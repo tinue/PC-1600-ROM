@@ -8,6 +8,9 @@ built-in serial port (`COM1:`). As this is a European unit, no kanji ROM is pres
 
 The ROM got dumped on a plain PC-1600, no additional memory modules installed.
 
+Want to dump the ROM of your own PC-1600? Follow the step-by-step guide in
+[`DUMPING.md`](DUMPING.md).
+
 ## Contents
 
 | File | What it is |
