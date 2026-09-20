@@ -60,7 +60,7 @@ a675c6dbdf7dc4c10e8d96891e196f8f  dumps/PC1600-P1-B5-CE1600P-OR-F.BIN
 The MD5s above are just a fixed reference for these specific files. The
 actual check made during capture, for every page: the 16-bit sum computed
 on the PC-1600 itself (shown on the LCD immediately before sending) and
-the 16-bit sum `SharpDataExchange --raw` reports on receipt agree.
+the 16-bit sum `sde get --raw` reports on receipt agree.
 
 ---
 
@@ -91,13 +91,14 @@ step can be skipped.
 ### 2. Load it onto the PC-1600
 
 You need a way to get bytes onto the PC-1600's `COM1:` port. This was done
-with [SharpDataExchange](https://github.com/tinue/SharpDataExchange) (a
-Java command-line tool for exchanging data with Sharp pocket computers over
+with [SharpDataExchange](https://github.com/tinue/SharpDataExchange) (`sde`, a
+command-line tool for exchanging data with Sharp pocket computers over
 serial), used only as a convenient example — any tool that can send an
 arbitrary byte stream to the PC-1600's serial port and let you type BASIC
 commands works.
 
-Build it (`mvn install`), producing `bin/SharpDataExchange.jar`.
+Download the archive for your platform from the
+[Releases page](https://github.com/tinue/SharpDataExchange/releases) and put `sde` on your `PATH`.
 
 **On the PC-1600**, reserve space for the program before loading:
 
@@ -113,8 +114,8 @@ the program grows past that.)
 giving both the load and auto-run address (`C0C5H`):
 
 ```
-java -jar SharpDataExchange.jar put --device pc1600 \
-     --start-address C0C5 --run-address C0C5 dumper/pc1600-rom-dumper.bin
+sde put --device pc1600 \
+    --start-address C0C5 --run-address C0C5 dumper/pc1600-rom-dumper.bin
 ```
 
 **On the PC-1600**, receive and auto-run it:
@@ -167,7 +168,7 @@ Running `pc1600-rom-dumper.bin` (`CALL&C0C5` if not auto-run) shows a menu:
 on the PC:
 
 ```
-java -jar SharpDataExchange.jar get --device pc1600 --raw <filename>.bin
+sde get --device pc1600 --raw <filename>.bin
 ```
 
 `--raw` is the important flag here — it captures the byte stream verbatim,
@@ -180,7 +181,7 @@ directory) so the receiver output stays self-documenting.
 Start the receiver, *then* press the key on the PC-1600 to send — the
 PC-1600 doesn't buffer, so the receiver has to already be listening.
 
-Repeat for all 8 pages (7 from option 2, 1 from option 3). `SharpDataExchange
+Repeat for all 8 pages (7 from option 2, 1 from option 3). `sde get
 --raw` prints a 16-bit sum (mod 65536) of the received bytes on completion;
 compare it against the checksum the PC-1600 showed on screen for that page
 before sending. They should match — if they don't, the transfer is suspect
@@ -190,7 +191,7 @@ and worth re-doing that page.
 
 - The PC-1600's serial port is 5V TTL via a 15-pin connector; a USB/UART
   adapter is needed to talk to it from a modern PC (see
-  SharpDataExchange's own manual for wiring detail — this isn't specific
+  SharpDataExchange's `docs/HardwareNotes.md` for wiring detail — this isn't specific
   to the dumper).
 - A CE-1600P printer/plotter should be attached for Bank 4/5 to show real
   content instead of open bus (`FF` fill) — those banks are the CE-1600P's
