@@ -34,10 +34,10 @@ Connect it to the PC-1600 and type:
 PRINT PEEK #(5,&7FFE), PEEK #(5,&7FFF)
 ```
 
-- `5` and `18`: the version in [`dumps/peripherals/`](dumps/peripherals)
+- `5` and `18`: the new version, in [`dumps/ce1600p/new/`](dumps/ce1600p/new)
   (`PC1600-P1-B4-CE1600P.BIN`, `PC1600-P1-B5-CE1600P-OR-F.BIN`).
-- `4` and `16`: the older version, also in `dumps/peripherals/`
-  (`PC1600-P1_B4-old.BIN`, `PC1600-P1_B5-old.BIN`).
+- `4` and `16`: the older version, in [`dumps/ce1600p/old/`](dumps/ce1600p/old)
+  (same file names).
 - Anything else: a version nobody has dumped yet. Please dump it (option `2`
   sends the peripheral pages too) and share the files.
 
@@ -173,7 +173,7 @@ the missing `4` version or the older `130` one, whichever your `PEEK` showed.
   lives in RAM, so `NEW` or a reset removes it.
 - **Without the CE-1600P attached**, the two pages that belong to it
   (`PC1600-P1-B4-CE1600P.BIN` and `PC1600-P1-B5-CE1600P-OR-F.BIN`, kept in
-  `dumps/peripherals/`) come out
+  `dumps/ce1600p/`) come out
   filled with `FF`. That is normal.
 - **`ERROR 142` on the PC-1600.** Most likely one of the serial setup commands
   from step 3 went wrong, or the PC-1600 was reset in the meantime. Type the

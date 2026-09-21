@@ -26,11 +26,11 @@ machine that reports `4` is the most wanted one. Further dumps of the old
 The tables below describe the **new** ROM's files. The old ROM uses the same
 file names.
 
-The calculator ROM (`dumps/new/`, `dumps/old/`) and peripheral ROMs
-([`dumps/peripherals/`](dumps/peripherals)) are independent. A peripheral's
-ROM lives in the peripheral itself, not in the calculator, and is independent
-of the calculator's ROM version. If more peripheral ROMs turn up, each gets
-its own file there.
+The calculator ROM (`dumps/new/`, `dumps/old/`) and the CE-1600P ROM
+([`dumps/ce1600p/`](dumps/ce1600p), with `new/` and `old/` as well) are
+independent. A peripheral's ROM lives in the peripheral itself, not in the
+calculator, and is independent of the calculator's ROM version. If more
+peripheral ROMs turn up, each gets its own directory under `dumps/`.
 
 Want to dump the ROM of your own PC-1600? Follow the step-by-step guide in
 [`DUMPING.md`](DUMPING.md).
@@ -52,10 +52,11 @@ Want to dump the ROM of your own PC-1600? Follow the step-by-step guide in
 
 | File | What it is |
 |---|---|
-| `dumps/peripherals/PC1600-P1-B4-CE1600P.BIN` | Page 1, Bank 4 — CE-1600P printer/plotter ROM |
-| `dumps/peripherals/PC1600-P1-B5-CE1600P-OR-F.BIN` | Page 1, Bank 5 — CE-1600P floppy/cassette ROM (see note below) |
-| `dumps/peripherals/PC1600-P1_B4-old.BIN` | Page 1, Bank 4 — same, from the older peripheral version |
-| `dumps/peripherals/PC1600-P1_B5-old.BIN` | Page 1, Bank 5 — same, from the older peripheral version |
+| `dumps/ce1600p/new/PC1600-P1-B4-CE1600P.BIN` | Page 1, Bank 4 — CE-1600P printer/plotter ROM |
+| `dumps/ce1600p/new/PC1600-P1-B5-CE1600P-OR-F.BIN` | Page 1, Bank 5 — CE-1600P floppy/cassette ROM (see note below) |
+
+The `old/` directory holds the same two files (same names) from the older
+peripheral version.
 
 There are at least two versions of the peripheral code. With the peripheral
 attached, `PRINT PEEK #(5,&7FFE)` and `PRINT PEEK #(5,&7FFF)` tell them apart
@@ -63,10 +64,10 @@ attached, `PRINT PEEK #(5,&7FFE)` and `PRINT PEEK #(5,&7FFF)` tell them apart
 it as well, and dump it if it differs from both versions listed here (see the
 [dumping guide](DUMPING.md)):
 
-| Version | Files | `PEEK #(5,&7FFE)` / `PEEK #(5,&7FFF)` |
+| Version | Directory | `PEEK #(5,&7FFE)` / `PEEK #(5,&7FFF)` |
 |---|---|---|
-| Current | `PC1600-P1-B4-CE1600P.BIN`, `PC1600-P1-B5-CE1600P-OR-F.BIN` | `5` / `18` (`05 12` hex) |
-| Older | `PC1600-P1_B4-old.BIN`, `PC1600-P1_B5-old.BIN` | `4` / `16` (`04 10` hex) |
+| New | [`dumps/ce1600p/new/`](dumps/ce1600p/new) | `5` / `18` (`05 12` hex) |
+| Old | [`dumps/ce1600p/old/`](dumps/ce1600p/old) | `4` / `16` (`04 10` hex) |
 
 Each `.BIN` file is exactly 16384 bytes (16KB).
 
@@ -96,10 +97,10 @@ MD5 checksums of the `.BIN` dumps as captured:
 bddbb8bbf0b2bd2d95038f67b8d002ac  dumps/new/PC1600-P1-B0.BIN
 6f6e1a9d46db7dc91d4322c93583ac81  dumps/new/PC1600-P1-B3.BIN
 2483319acf35da4e848e59ab954abf46  dumps/new/PC1600-P1-B3B.BIN
-05548a8dda3e572d50d4bd281a650ea8  dumps/peripherals/PC1600-P1-B4-CE1600P.BIN
-a675c6dbdf7dc4c10e8d96891e196f8f  dumps/peripherals/PC1600-P1-B5-CE1600P-OR-F.BIN
-df41b050acbc29c83214cbaaf29bee91  dumps/peripherals/PC1600-P1_B4-old.BIN
-33f3ef7207eac06587cc4c6d70c6cbd0  dumps/peripherals/PC1600-P1_B5-old.BIN
+05548a8dda3e572d50d4bd281a650ea8  dumps/ce1600p/new/PC1600-P1-B4-CE1600P.BIN
+a675c6dbdf7dc4c10e8d96891e196f8f  dumps/ce1600p/new/PC1600-P1-B5-CE1600P-OR-F.BIN
+df41b050acbc29c83214cbaaf29bee91  dumps/ce1600p/old/PC1600-P1-B4-CE1600P.BIN
+33f3ef7207eac06587cc4c6d70c6cbd0  dumps/ce1600p/old/PC1600-P1-B5-CE1600P-OR-F.BIN
 86cb9036da284de2b04c7946d140a9fd  dumps/new/PC1600-P2-B6.BIN
 56168830b46d637b08529a74609bee3f  dumps/new/PC1600-LH5803-C000-FFFF.BIN
 ```
@@ -122,7 +123,7 @@ second dump (16-bit sum `0x5AF6`, matching the sum on receipt).
 - Only the six files below are kept. The two CE-1600P pages (Bank 4 and
   Bank 5) from this dump were taken without a CE-1600P attached and contain
   no peripheral ROM, so they were not kept. The peripheral ROMs are in
-  `dumps/peripherals/` (see above); they do not depend on the calculator's
+  `dumps/ce1600p/` (see above); they do not depend on the calculator's
   ROM version.
 
 ```
