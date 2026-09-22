@@ -23,6 +23,15 @@ The `4` variant of the new ROM has not been dumped yet, so a dump from a
 machine that reports `4` is the most wanted one. Further dumps of the old
 (`130`) ROM can only confirm what is already here.
 
+### Source machines
+
+| ROM | Version | Machine production date |
+|---|---|---|
+| Calculator (PC-1600) | New | August 1990 and July 1989 (two machines) |
+| Calculator (PC-1600) | Old | May 1986 |
+| Peripheral (CE-1600P) | New | March 1988 |
+| Peripheral (CE-1600P) | Old | October 1986 |
+
 The tables below describe the **new** ROM's files. The old ROM uses the same
 file names.
 
