@@ -50,6 +50,7 @@ Want to dump the ROM of your own PC-1600? Follow the step-by-step guide in
 |---|---|
 | `dumper/pc1600-rom-dumper.asm` | Z-80 assembly source for the dumper program (zasm dialect) |
 | `dumper/pc1600-rom-dumper.bin` | Assembled machine-language binary, ready to load at `C0C5H` |
+| `disasm/` | Annotated, reassemblable disassemblies of every dump (same paths as `dumps/`, `.asm`); see [`disasm/README.md`](disasm/README.md) for contents, OLD→NEW fixes and how to reassemble |
 | `dumps/new/PC1600-P0-B0.BIN` | Page 0 (0000H–3FFFH), Bank 0 — main system ROM (always resident) |
 | `dumps/new/PC1600-P1-B0.BIN` | Page 1 (4000H–7FFFH), Bank 0 — system ROM continuation |
 | `dumps/new/PC1600-P1-B3.BIN` | Page 1, Bank 3 — system ROM (CS24 chip, normal half) |
