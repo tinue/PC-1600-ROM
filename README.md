@@ -186,11 +186,11 @@ Download the archive for your platform from the
 **On the PC-1600**, reserve space for the program before loading:
 
 ```
-NEW"S0:",&B00
+NEW"S0:",&1000
 ```
 
-(`&B00` = 2816 decimal bytes — comfortably more than `dumper/pc1600-rom-dumper.bin`'s
-size plus the 197-byte header offset; adjust upward if a future version of
+(`&1000` = 4096 decimal bytes, i.e. `C0C5H`–`CFFFH`: `dumper/pc1600-rom-dumper.bin`
+is 2825 bytes and needs `C0C5H`–`CBCDH`; adjust upward if a future version of
 the program grows past that.)
 
 **On the PC**, send the binary with a machine-language transfer header,

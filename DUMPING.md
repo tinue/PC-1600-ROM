@@ -82,7 +82,7 @@ in PRO mode. Then reserve some memory for the dumper, and set up the serial
 port by typing these lines:
 
 ```
-NEW"S0:",&B00
+NEW"S0:",&1000
 SETCOM"COM1:",9600,8,N,1,N,N
 OUTSTAT"COM1:"
 SNDSTAT"COM1:",28
@@ -124,6 +124,7 @@ After loading, the dumper shows this menu on the PC-1600:
 | `1` | Sweep: shows a small sample of every bank on the display. Nothing is sent. Just for looking. |
 | `2` | Dump and send the 7 pages of the main ROM and the CE-1600P |
 | `3` | Dump and send the LH-5803 co-processor ROM (takes about 30 seconds before it asks to send) |
+| `4` | Dump and send every other bank that could hold a peripheral ROM (see [Other peripheral ROMs](#other-peripheral-roms)) |
 
 > **➡️ Now press `2` on the PC-1600.**
 > The other options do not dump the main ROM. Option `3` comes at the very end.
@@ -156,6 +157,31 @@ to BASIC. To get the last file, start the dumper again by typing `CALL&C0C5`, pr
 
 To repeat a single page, start the dumper again, press `2`, and press `S` for
 every page you do not want to send again.
+
+### Other peripheral ROMs
+
+Option `4` is for peripherals other than the CE-1600P, for example a
+third-party module on the 60-pin bus or a ROM cartridge in a memory slot. It
+works like option `2`, with these 12 pages:
+
+| Pages | File names | What could be there |
+|---|---|---|
+| Page 1 (4000H), banks 1, 2, 6, 7 | `PC1600-P1-B1.BIN` … `PC1600-P1-B7.BIN` | ROMs on the 60-pin bus. The PC-1600 looks for them in these banks when it starts. The MEP rev3 module, for example, uses bank 7 |
+| Page 2 (8000H), banks 0–3 | `PC1600-P2-B0.BIN` … `PC1600-P2-B3.BIN` | The two memory slots: a ROM cartridge, or the contents of a RAM module |
+| Page 2, bank 4 | `PC1600-P2-B4.BIN`, `PC1600-P2-B4-KANJI.BIN` | The Japanese kanji ROM (second file) |
+| Page 2, banks 5, 7 | `PC1600-P2-B5.BIN`, `PC1600-P2-B7.BIN` | Nothing known |
+
+Most of these pages are empty. An empty page shows `ALL FF - S TO SKIP`
+instead of `PRESS KEY TO SEND`. Any other key still sends it. To find out first which
+banks hold anything, use option `1`: it shows two samples of every bank, at
+the offsets where a ROM's header would be.
+
+Remove RAM modules from the memory slots before loading the dumper, unless you
+want their contents. A RAM module that is part of the main memory can also
+move the reserved area away from `C0C5`.
+
+Please share a peripheral ROM you dump this way. Each peripheral gets its own
+directory under [`dumps/`](dumps), like [`dumps/ce1600p/`](dumps/ce1600p).
 
 ## 6. Done
 
