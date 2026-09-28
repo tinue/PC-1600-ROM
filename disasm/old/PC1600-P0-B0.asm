@@ -2622,8 +2622,9 @@ L0B41:
 
 
 ;------------------------------------------------------------------------------
-; 0B51H - (0199H) Map slot II into 0000H-3FFFH of bank 1 (SLOT2MAP)
-; A = 0 normal, 1 slot IIa (SLOTMAP b5), 2 slot IIb (b4).
+; 0B51H - (0199H) Map slot II also into bank 1 of page 0 / page 1 (SLOT2MAP)
+; A = 0 normal; 1 = slot IIa also at 0000H-3FFFH (SLOTMAP b5); 2 = slot IIa at
+; 4000H-7FFFH and slot IIb at 0000H-3FFFH (b4).  TRM 3.12.3.
 ;------------------------------------------------------------------------------
 SLOT2MAP_I:
 	push bc                         ; 0B51  c5
