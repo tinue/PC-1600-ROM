@@ -14,8 +14,8 @@
 ;       keypress sends the full 16KB page out over COM1: via the serial
 ;       IOCS (CSNDA). Press S to skip a page instead of sending it. COM1:
 ;       itself must already be configured (SETCOM/OUTSTAT/SNDSTAT/RCVSTAT/
-;       INIT) from BASIC before this program is CALLed -- see the
-;       accompanying .pc1600 preset / README for the exact sequence. This
+;       INIT) from BASIC before this program is CALLed -- see
+;       DUMPING.md for the exact sequence. This
 ;       program only calls CSNDA; it never touches CWCOM/CESND/CCLRSB.
 ;
 ;   3 = LH5803 ROM -- dumps the LH-5803 co-processor's own private 16KB ROM
@@ -34,7 +34,7 @@
 ; always-resident bank 0 (0000-3FFF), so they too are unaffected.
 ;
 ; Assumes the machine is already NEW'd with enough S0: space to hold this
-; program; the .pc1600 preset / load sequence handles that.
+; program; DUMPING.md gives the load sequence.
 ;
 ; Hardware note -- Port 3DH (hidden-BASIC-ROM sub-bank select, bit b2):
 ; clearing b2 selects Bank 3b instead of Bank 3 at 4000-7FFF. This port is
