@@ -62,8 +62,9 @@ On your computer:
    download the archive for your system, and unpack it. Put `bin/sde`
    somewhere on your `PATH`, or simply run it from where you unpacked it.
 2. **The dumper program**: download
-   [`pc1600-rom-dumper.bin`](https://github.com/tinue/PC-1600-ROM/raw/main/dumper/pc1600-rom-dumper.bin)
-   and remember where you saved it.
+   [`pc1600-rom-dumper-with-header.bin`](https://github.com/tinue/PC-1600-ROM/raw/main/dumper/pc1600-rom-dumper-with-header.bin)
+   and remember where you saved it. Its header already tells the PC-1600
+   where to load the program and to start it.
 
 Then open a terminal (Command Prompt or PowerShell on Windows) in the folder
 where you want the dumped files to end up.
@@ -106,7 +107,7 @@ BLOAD"COM1:"
 file). Do this right after pressing Enter on the PC-1600:
 
 ```
-sde put --device pc1600 --start-address 0xC0C5 --run-address 0xC0C5 pc1600-rom-dumper.bin -v
+sde put --device pc1600 pc1600-rom-dumper-with-header.bin -v
 ```
 
 When the transfer is done, the dumper starts by itself.

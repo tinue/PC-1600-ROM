@@ -50,6 +50,7 @@ Want to dump the ROM of your own PC-1600? Follow the step-by-step guide in
 |---|---|
 | `dumper/pc1600-rom-dumper.asm` | Z-80 assembly source for the dumper program (zasm dialect) |
 | `dumper/pc1600-rom-dumper.bin` | Assembled machine-language binary, ready to load at `C0C5H` |
+| `dumper/pc1600-rom-dumper-with-header.bin` | The same binary with a PC-1600 transfer header (load and run address `C0C5H`), for loading without extra options |
 | `disasm/` | Annotated, reassemblable disassemblies of every dump (same paths as `dumps/`, `.asm`); see [`disasm/README.md`](disasm/README.md) for contents, OLD→NEW fixes and how to reassemble |
 | `dumps/new/PC1600-P0-B0.BIN` | Page 0 (0000H–3FFFH), Bank 0 — main system ROM (always resident) |
 | `dumps/new/PC1600-P1-B0.BIN` | Page 1 (4000H–7FFFH), Bank 0 — system ROM continuation |
@@ -171,6 +172,14 @@ reserved header area).
 If you already have `dumper/pc1600-rom-dumper.bin` from this directory, this
 step can be skipped.
 
+`pc1600-rom-dumper-with-header.bin` is the same binary behind a 16-byte
+PC-1600 transfer header (machine code, length, load address `C0C5H`, run
+address `C0C5H`). After reassembling, rebuild it with:
+
+```
+python3 -c "b=open('pc1600-rom-dumper.bin','rb').read();n=len(b);open('pc1600-rom-dumper-with-header.bin','wb').write(bytes([0xFF,0x10,0,0,0x10,n&255,n>>8,0,0xC5,0xC0,0,0xC5,0xC0,0,0,0x0F])+b)"
+```
+
 ### 2. Load it onto the PC-1600
 
 You need a way to get bytes onto the PC-1600's `COM1:` port. This was done
@@ -193,13 +202,15 @@ NEW"S0:",&1000
 is 2825 bytes and needs `C0C5H`–`CBCDH`; adjust upward if a future version of
 the program grows past that.)
 
-**On the PC**, send the binary with a machine-language transfer header,
-giving both the load and auto-run address (`C0C5H`):
+**On the PC**, send the binary. Its header already gives the load and
+auto-run address (`C0C5H`):
 
 ```
-sde put --device pc1600 \
-    --start-address C0C5 --run-address C0C5 dumper/pc1600-rom-dumper.bin
+sde put --device pc1600 dumper/pc1600-rom-dumper-with-header.bin
 ```
+
+(With the headerless `pc1600-rom-dumper.bin`, give the addresses yourself:
+`--start-address C0C5 --run-address C0C5`.)
 
 **On the PC-1600**, receive and auto-run it:
 
