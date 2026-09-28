@@ -40,16 +40,14 @@
 ; clearing b2 selects Bank 3b instead of Bank 3 at 4000-7FFF. This port is
 ; write-only. Getting a correct read of Bank 3/3b requires two things this
 ; program does everywhere it touches the port:
-;   1. BANKSET before the Port 3DH write, not after (the ROM's own BANKSET
-;      routine does not preserve an out-of-order Port 3DH state).
-;   2. Interrupts briefly disabled (DI/EI) around the write and the read
-;      that follows it. The PC-1600's own interrupt handlers (keyboard
-;      scan / the 1/64s timer tick) do not preserve Port 3DH's state, so a
-;      read landing between the write and the actual memory access can
-;      silently see the wrong bank. For the serial send specifically (too
-;      long, ~17s at 9600 baud, to run under one DI), Port 3DH is instead
-;      re-asserted before every byte, each reassert individually DI/EI-
-;      guarded.
+; write-only; the firmware keeps its current value in RAM at F07DH. The
+; IM2 interrupt entry (082CH) and every RST 18H / BANKCALL bank switch
+; (which all the IOCS calls used here go through) force Port 3DH to 04H
+; while they run and then restore it *from F07DH*. So SET_PORT3D writes
+; F07DH and the port together, as the ROM itself does; the selection then
+; survives interrupts and IOCS calls. A bare OUT (3DH) would be undone by
+; the next interrupt (F07DH still says 04H) -- the cause of the early
+; "Bank 3b reads identical to Bank 3" results.
 ; ============================================================================
 
 #target bin
@@ -68,6 +66,7 @@ SERIAL      equ 0x01D8      ; C=routine#, D=channel(1=COM1:) as needed -> dispat
 S_CSNDA     equ 0x03        ; A=byte to send -> CF=1/A=error byte on failure
 
 PORT3D      equ 0x3D        ; hidden-BASIC-ROM sub-bank select (bit 2; not readable via IN)
+PORT3D_M    equ 0xF07D      ; firmware's copy of Port 3DH; interrupts/bank calls restore from it
 
 ; ---- Z-80 -> LH-5803 bridge (PC-1600-CPU-LH5803-Compat.md Part 3) ----
 CALLH       equ 0x01C6      ; hands off to an LH-5803 subroutine, returns when it RTNs
@@ -127,8 +126,6 @@ sweep_start:
         ld   d, 0
         ld   e, 0x00
         call show_status           ; MEMORYCHK D=0,E=00 -- page-0 bank 0
-        ld   a, 0x04                ; page 0 doesn't involve Port 3DH
-        ld   (cur_port3d), a
         ld   hl, 0x0000
         ld   de, line_buf
         call BUILD_HEX_LINE
@@ -181,7 +178,7 @@ all_done:
         ld   b, 2
         call BANKSET
         ld   a, 0x04
-        out  (PORT3D), a
+        call SET_PORT3D
 
         call CLS
         ld   hl, lbl_done
@@ -247,7 +244,7 @@ dump_done:
         ld   b, 2
         call BANKSET
         ld   a, 0x04
-        out  (PORT3D), a
+        call SET_PORT3D
 
         call CLS
         ld   hl, lbl_done
@@ -274,17 +271,12 @@ rde_no_bankset:
         jr   nz, rde_have_port3d
         ld   a, 0x04                ; "don't touch" -> the safe/normal default
 rde_have_port3d:
-        ld   (cur_port3d), a        ; SEND_PAGE reasserts this every byte later
+        call SET_PORT3D
 
-        di
-        out  (PORT3D), a
-
-        ; checksum over the 16KB page, base address = (ix+3):(ix+4) --
-        ; the actual hardware read, done immediately, interrupts disabled.
+        ; checksum over the 16KB page, base address = (ix+3):(ix+4)
         ld   l, (ix+4)
         ld   h, (ix+3)
         call COMPUTE_CHECKSUM       ; HL preserved, DE = checksum
-        ei
         push de                     ; stash across the display calls below
 
         call CLS
@@ -338,35 +330,24 @@ rde_have_port3d:
         cp   's'                      ; hint needed; any other key sends)
         jr   z, rde_skip
 
-        ; Re-assert bank/Port 3DH immediately before the actual send: the
-        ; checksum above was read under DI, but the display/keypress wait
-        ; since then ran with interrupts enabled and may have disturbed
-        ; Port 3DH again. SEND_PAGE itself reasserts before every byte too
-        ; (the send is far too long to cover with a single DI), so this is
-        ; just what gets the very first bytes right before its first
-        ; reassert point.
-        ld   a, (ix+2)              ; page number
-        or   a
-        jr   z, rde_no_bankset2
-        ld   c, a
-        ld   a, (ix+0)              ; bank number
-        ld   b, c
-        call BANKSET
-rde_no_bankset2:
-        ld   a, (ix+1)              ; port3d value, or 0xFF = don't touch
-        cp   0xFF
-        jr   z, rde_no_port3d2
-        di
-        out  (PORT3D), a
-        ei
-rde_no_port3d2:
-
+        ; The display/keypress IOCS calls above restored bank and Port 3DH
+        ; on return, so the page is still mapped.
         ld   l, (ix+4)               ; reload base address -- clobbered above
         ld   h, (ix+3)
         jp   SEND_PAGE                ; tail call: CF/A propagate to caller
 
 rde_skip:
         xor  a                       ; success, nothing sent, CF=0
+        ret
+
+; ============================================================================
+; SET_PORT3D: A = Port 3DH value (04H = bank 3, 00H = hidden bank 3b).
+; Writes the firmware's copy at F07DH first, then the port -- same order as
+; the ROM's own ROMSELN (08A5H) -- so an interrupt in between restores the
+; new value, not the old one.
+SET_PORT3D:
+        ld   (PORT3D_M), a
+        out  (PORT3D), a
         ret
 
 ; ============================================================================
@@ -397,19 +378,9 @@ cs_noc:
 ; byte over COM1: via CSNDA. On success returns CF=0. On a CSNDA error,
 ; stops immediately and returns CF=1, A=CSNDA's error byte (b0=timeout,
 ; b1=BREAK pressed) -- no channel parameter needed, per the IOCS table.
-;
-; Port 3DH is re-asserted from cur_port3d before every byte (each reassert
-; individually DI/EI-guarded; CSNDA itself runs with interrupts enabled,
-; since the send is too long -- ~17s at 9600 baud -- to cover with a
-; single DI without starving whatever the serial IOCS needs interrupts
-; for).
 SEND_PAGE:
         ld   bc, 0x4000
 sp_loop:
-        di
-        ld   a, (cur_port3d)
-        out  (PORT3D), a
-        ei
         ld   a, (hl)
         push hl
         push bc
@@ -456,9 +427,8 @@ LH5803_FETCH_BYTE:
 
 ; ============================================================================
 ; LH5803_SELFTEST: fetches LH-5803 address C000H twice in a row and compares
-; the two results. Returns CF=0 if they agree, CF=1 if they don't. Mirrors
-; the double-fetch check that originally caught the Port 3DH interrupt bug --
-; run once before trusting a full LH5803 dump.
+; the two results. Returns CF=0 if they agree, CF=1 if they don't. Run once
+; before trusting a full LH5803 dump.
 LH5803_SELFTEST:
         ld   hl, 0xC000
         call LH5803_FETCH_BYTE
@@ -634,9 +604,7 @@ run_page1_entry:
         call BANKSET
 
         ld   a, (ix+1)             ; port3d value
-        ld   (cur_port3d), a
-        di
-        out  (PORT3D), a
+        call SET_PORT3D
 
         ld   a, (ix+2)             ; mode
         cp   1
@@ -656,8 +624,6 @@ p1_bank5_read:
         call BUILD_HEX_LINE
 
 p1_reads_done:
-        ei
-
 p1_display:
         call CLS
         ld   l, (ix+3)
@@ -714,8 +680,6 @@ run_page2_entry:
         cp   1
         jr   nz, p2_entry_done
 
-        ld   a, 0x04                ; page 2 doesn't involve Port 3DH
-        ld   (cur_port3d), a
         ld   hl, 0x8000
         ld   de, line_buf
         call BUILD_HEX_LINE
@@ -810,9 +774,7 @@ ss_tag:
 
 ; ============================================================================
 ; BUILD_HEX_LINE: HL = base address to sample 8 bytes from, DE = dest
-; buffer. Fills DE with "AAAA:xxxxxxxxxxxxxxxx" (null-terminated). Pure
-; computation -- no IOCS calls -- so it can run immediately after a Port
-; 3DH/BANKSET write with nothing else in between.
+; buffer. Fills DE with "AAAA:xxxxxxxxxxxxxxxx" (null-terminated).
 BUILD_HEX_LINE:
         push hl
         ld   a, h
@@ -997,7 +959,6 @@ status_buf:             ds 24
 line_buf:               ds 24
 line_buf2:              ds 24
 send_err_code:          ds 1
-cur_port3d:             ds 1
 lh5803_addr:            ds 2
 lh5803_count:           ds 2
 lh5803_chk:             ds 2
