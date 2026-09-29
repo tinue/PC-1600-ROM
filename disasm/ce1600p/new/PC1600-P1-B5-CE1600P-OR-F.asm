@@ -263,7 +263,7 @@ CALLH:      equ 01C6H   ; activate the second CPU (LH-5803)
 TIMER:      equ 01D5H   ; sub-CPU (RTC/timer/analog) routines — dispatcher, PC-1600-IO-Ports.md §7
 ASCBIN:     equ 023EH   ; ASCII (HL) → integer, DE
 BCDBIN:     equ 0247H   ; BCD XX → integer, DE
-TOKENIZE:   equ 0256H   ; process the BASIC buffer — see Basic-Programming/reference/Tokenizer-Analysis.md for the PC-1500 sibling routine
+TOKENIZE:   equ 0256H   ; process the BASIC buffer — see Sharp1500-1600-Ref PC-1500/Basic-Programming/reference/Tokenizer-Analysis.md for the PC-1500 sibling routine
 LINLIST:    equ 025FH   ; read the line starting at (HL), with the cursor address in BC → input buffer F21DH–F31CH
 EOCHK3:     equ 0265H   ; test statement-end
 EXPRESS:    equ 0274H   ; numeric or string parameter → XX
