@@ -740,18 +740,22 @@ EXC_RET:
 
 
 ;------------------------------------------------------------------------------
-; $C440 - (FC) Non-maskable interrupt: shift the PC-1500 display RAM and redraw it?
-; With the Z-80 trap off, the two display halves (7600H-764DH, 7700H-774DH) are
-; moved by the amount taken from the interrupted stack frame, the LCD window is
-; redrawn (LCD1500_ALLY), port 36H acknowledged, and the CE-158 ROM continued at
-; $943A with interrupts enabled.  A04: the NMI ($E22B) was only RTI.
+; $C440 - (FC) Non-maskable interrupt: run the CE-158 display-RAM shift natively
+; The SC7852 raises the NMI (LHNMIO, its pin 92; Service Manual: "94**H") when the
+; LH5803 fetches 9400H with PU = PV = 1, in the CE-158 high bank's display shift at
+; $93F9-$9439 (7600H-764DH and 7700H-774DH moved by the pushed UL).  The
+; handler is that routine: $C44A-$C489 is a byte copy of CE-158 $93FA-$9439.  It
+; runs with the display-write trap off (P_MOD b0), redraws the LCD once
+; (LCD1500_ALLY, which turns the trap back on), acknowledges the NMI at port 36H and
+; continues the CE-158 code at $943A.  The interrupt frame (P, T) is dropped: SIE
+; stands in for the RTI.  A04: the NMI ($E22B) was only RTI.
 ;------------------------------------------------------------------------------
 NMI_HANDLER:
 	ani #(P_MOD),0xFE               ; C440  fde9a030fe
-	pop x                           ; C445  fd0a
-	pop x                           ; C447  fd0a
+	pop x                           ; C445  fd0a         drop the 3-byte interrupt frame (P, T) and
+	pop x                           ; C447  fd0a         the byte the CE-158 pushed at $93FA (its UL)
 	lda xl                          ; C449  04
-	psh a                           ; C44A  fdc8
+	psh a                           ; C44A  fdc8         from here to $C489: copy of CE-158 $93FA-$9439
 	ldi uh,0x76                     ; C44C  6876
 	ldi xl,0x4E                     ; C44E  4a4e
 	ldi xh,0x77                     ; C450  4877
@@ -796,11 +800,11 @@ NMI_HANDLER_4:
 	tin                             ; C487  f5
 	lop ul,NMI_HANDLER_4            ; C488  8803
 	psh x                           ; C48A  fd88
-	sjp LCD1500_ALLY                ; C48C  beef79
+	sjp LCD1500_ALLY                ; C48C  beef79       redraw the LCD, P_MOD b0 := 1 again
 	pop x                           ; C48F  fd0a
-	ani #(P_CL1),0x00               ; C491  fde9a03600   port 36H: acknowledge
+	ani #(P_CL1),0x00               ; C491  fde9a03600   port 36H: acknowledge the NMI
 	sie                             ; C496  fd81
-	jmp 0x943A                      ; C498  ba943a       CE-158 ROM (PV=1)
+	jmp 0x943A                      ; C498  ba943a       CE-158 ROM (PU=PV=1), after the shift
 
 
 
