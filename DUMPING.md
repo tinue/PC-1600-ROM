@@ -90,20 +90,25 @@ port by typing these lines:
 NEW"S0:",&1000
 SETCOM"COM1:",9600,8,N,1,N,N
 OUTSTAT"COM1:"
-SNDSTAT"COM1:",28,0
+SNDSTAT"COM1:",24,0
 RCVSTAT"COM1:",28,0
 INIT"COM1:",1024
 ```
 
 What these lines do:
 
+RTS/CTS hardware flow control, which `sde` uses by default, works in both
+directions:
+
 - `OUTSTAT"COM1:"` switches the PC-1600's RTS line to automatic mode. RTS then
-  tells your computer when the PC-1600 can take more data. This is the hardware
-  flow control that `sde` uses by default.
-- `SNDSTAT"COM1:",28,0` and `RCVSTAT"COM1:",28,0` tell the PC-1600 not to
-  wait for or check any handshake line itself, and to wait forever. Type the
-  `,0` at the end: without it, the PC-1600 gives up after about 30 seconds with
-  `ERROR 142` (or `ERROR 143` when sending).
+  tells your computer when the PC-1600 can take more data (loading the dumper).
+- `SNDSTAT"COM1:",24,0` makes the PC-1600 check its CTS line, which carries your
+  computer's RTS, before it sends each byte (sending the dumped pages).
+- `RCVSTAT"COM1:",28,0` makes the PC-1600 accept every byte it receives. This
+  command is a filter, not flow control, so `28` is right with RTS/CTS too.
+- The `,0` at the end of `SNDSTAT` and `RCVSTAT` means "no timeout". Type it:
+  without it, the PC-1600 gives up after about 30 seconds with `ERROR 142` (or
+  `ERROR 143` when sending).
 - `INIT"COM1:",1024` sets the receive buffer to 1 KB. Flow control or pacing
   keeps it from overflowing, so it does not need to be larger. This has been
   tested on a real PC-1600 with a file of more than 50 KB.
@@ -128,14 +133,21 @@ When the transfer is done, the dumper starts by itself.
 
 If `sde` warns that the PC-1600 never raises CTS, the RTS line does not reach
 your adapter (wrong or missing wire, or wrong polarity). Press `BREAK` on the
-PC-1600, type `BLOAD"COM1:"` again, and send the program without flow control
-instead. `sde` then paces the transfer itself:
+PC-1600, switch off its own handshake check, type `BLOAD"COM1:"` again, and send
+the program without flow control instead. `sde` then paces the transfer itself:
+
+```
+SNDSTAT"COM1:",28,0
+BLOAD"COM1:"
+```
 
 ```
 sde put --device pc1600 --no-flowcontrol pc1600-rom-dumper-with-header.bin -v
 ```
 
-Use `--no-flowcontrol` for the `sde get` commands in step 5 as well.
+Use `--no-flowcontrol` for the `sde get` commands in step 5 as well. The
+`SNDSTAT"COM1:",28,0` matters there: with `24` and a cable without handshake
+lines, the PC-1600 would wait forever for CTS when it sends a page.
 
 > If `sde` complains that it cannot find the serial port, add
 > `--port <name>` to the command. The name looks like `/dev/cu.usbserial-XXXX`
@@ -236,10 +248,15 @@ the missing `4` version or the older `130` one, whichever your `PEEK` showed.
   - **Data was lost.** This happens when the flow control does not work.
     Retry with `--no-flowcontrol`. If it still fails, use a bigger buffer,
     `INIT"COM1:",4096`: that holds the whole dumper, so nothing can be lost.
-- **Flow control.** `sde` uses RTS/CTS hardware flow control by default.
-  `--no-flowcontrol` switches it off and sends slowly instead (paced), for
-  cables or adapters without working handshake lines. On the PC-1600 the setup
-  is the same in both cases.
+- **Flow control.** `sde` uses RTS/CTS hardware flow control by default, with
+  `SNDSTAT"COM1:",24,0` on the PC-1600. `--no-flowcontrol` switches it off and
+  sends slowly instead (paced), for cables or adapters without working
+  handshake lines; then use `SNDSTAT"COM1:",28,0`. `RCVSTAT"COM1:",28,0` is
+  the same in both cases.
+- **The PC-1600 hangs when sending a page.** With `SNDSTAT"COM1:",24,0` it
+  waits for your computer's RTS. If `sde get` is running and the PC-1600
+  still does not send, that line does not reach pin 5. Press `BREAK`, then use
+  `SNDSTAT"COM1:",28,0` and `--no-flowcontrol`.
 - **Start the receiver first.** The PC-1600 does not buffer: if `sde get` is
   not already waiting when you press the key, data is lost.
 - **Stopping the dumper.** It has no quit key. To abort a send, press `BREAK`

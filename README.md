@@ -231,18 +231,21 @@ menu's send option, type:
 ```
 SETCOM"COM1:",9600,8,N,1,N,N
 OUTSTAT"COM1:"
-SNDSTAT"COM1:",28,0
+SNDSTAT"COM1:",24,0
 RCVSTAT"COM1:",28,0
 INIT"COM1:",1024
 ```
 
 (`OUTSTAT` with no parameter puts the PC-1600's RTS in automatic mode, where it
 signals "ready to receive". `sde --device pc1600` (version 0.3.5 or later) uses RTS/CTS hardware flow
-control by default and warns if the PC-1600 never raises CTS. With
-`--no-flowcontrol` it paces the transfer instead, for cables without working
-handshake lines; the PC-1600 setup is the same either way. `28,0` makes the
-PC-1600 ignore its own handshake inputs and wait without a timeout; without the
-`,0` it aborts after about 30 s with `ERROR 142`. A 1024-byte receive buffer
+control by default and warns if the PC-1600 never raises CTS. `SNDSTAT"COM1:",24,0`
+makes the PC-1600 wait for CTS (the host's RTS) before each byte it sends, so
+RTS/CTS works in both directions. `RCVSTAT"COM1:",28,0` accepts every byte; it
+is a filter, not flow control. With `--no-flowcontrol` `sde` paces the transfer
+instead, for cables without working handshake lines; then use
+`SNDSTAT"COM1:",28,0`, or the PC-1600 waits forever for CTS when it sends. The
+trailing `,0` means no timeout; without it the PC-1600 aborts after about 30 s
+with `ERROR 142`. A 1024-byte receive buffer
 has been tested on real hardware with a file of more than 50 KB. These settings
 are lost at power-off, including auto power-off.)
 
