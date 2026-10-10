@@ -7321,8 +7321,9 @@ L6473:
 ; pointer F146H, read pointer F144H; errors (status AND 78H) are ORed into F150H.
 ; XON (11H) / XOFF (13H) from the other side set / clear F151H b3 when X-control
 ; is on (F131H/F134H b6); when only 8 bytes are left the receiver sends XOFF
-; (F152H b3) or drops RTS (F14FH b5).  F14EH b6: COM file active (sets BINTP1 b2
-; for ON COM GOSUB); otherwise COMRXB.
+; (F152H b3, X-control on) and drops RTS (F14FH b5, COM1 in auto mode).
+; F14EH b6 = 1 (COM2 selected): sets BINTP1 b2 (ON COM2 GOSUB) and continues
+; here; b6 = 0 (COM1): COMRXB, which sets BINTP1 b1 (ON COM1 GOSUB).
 ;------------------------------------------------------------------------------
 COMRXINT:
 	ld a,(0F14EH)                   ; 6488  3a4ef1
