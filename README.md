@@ -212,7 +212,8 @@ sde put --device pc1600 dumper/pc1600-rom-dumper-with-header.bin
 (With the headerless `pc1600-rom-dumper.bin`, give the addresses yourself:
 `--start-address C0C5 --run-address C0C5`.)
 
-**On the PC-1600**, receive and auto-run it:
+**On the PC-1600**, with the serial port set up as in step 3 below, receive and
+auto-run it:
 
 ```
 LOAD"COM1:",R
@@ -230,15 +231,20 @@ menu's send option, type:
 ```
 SETCOM"COM1:",9600,8,N,1,N,N
 OUTSTAT"COM1:"
-SNDSTAT"COM1:",28
-RCVSTAT"COM1:",28
-INIT"COM1:",4096
+SNDSTAT"COM1:",28,0
+RCVSTAT"COM1:",28,0
+INIT"COM1:",1024
 ```
 
-(`28` disables RTS/CTS hardware flow control, which does not work on many
-USB-to-serial setups; `sde` 0.2.2 or newer paces the transfer itself. To use
-hardware flow control anyway, pass `--flowcontrol` to `sde` and use `24`
-instead. `OUTSTAT` with no parameter enables dynamic RTS/DTR flow control.)
+(`OUTSTAT` with no parameter puts the PC-1600's RTS in automatic mode, where it
+signals "ready to receive". `sde --device pc1600` (version 0.3.5 or later) uses RTS/CTS hardware flow
+control by default and warns if the PC-1600 never raises CTS. With
+`--no-flowcontrol` it paces the transfer instead, for cables without working
+handshake lines; the PC-1600 setup is the same either way. `28,0` makes the
+PC-1600 ignore its own handshake inputs and wait without a timeout; without the
+`,0` it aborts after about 30 s with `ERROR 142`. A 1024-byte receive buffer
+has been tested on real hardware with a file of more than 50 KB. These settings
+are lost at power-off, including auto power-off.)
 
 ### 4. Run the dumper and capture each page
 
@@ -284,8 +290,8 @@ and worth re-doing that page.
 
 ### Hardware notes
 
-- The PC-1600's serial port is 5V TTL via a 15-pin connector; a USB/UART
-  adapter is needed to talk to it from a modern PC (see
+- The PC-1600's `COM1:` is an RS-232C port with reduced levels (about
+  +6 V / −8.5 V) on a 15-pin connector; a USB/UART adapter is needed to talk to it from a modern PC (see
   SharpDataExchange's `docs/HardwareNotes.md` for wiring detail — this isn't specific
   to the dumper).
 - A CE-1600P printer/plotter should be attached for Bank 4/5 to show real

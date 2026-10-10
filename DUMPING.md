@@ -48,7 +48,10 @@ share its files.
 
 - A Sharp PC-1600 with fresh batteries or its power adapter
 - A USB-to-serial cable that is already wired up for the PC-1600's 15-pin
-  serial connector
+  serial connector. For hardware flow control (the default, see step 3) it must
+  also carry the two handshake lines: PC-1600 RTS (pin 4) to the adapter's CTS,
+  and the adapter's RTS to PC-1600 CTS (pin 5). A cable with only TX, RX and
+  ground works too, with the `--no-flowcontrol` option.
 - A Mac, Linux or Windows computer
 - Optional: a CE-1600P printer/plotter, connected to the PC-1600. Without it,
   two of the eight files (the peripheral ROM) contain only `FF` bytes (see [Notes](#notes)).
@@ -57,7 +60,8 @@ share its files.
 
 On your computer:
 
-1. **`sde`**, the transfer tool (version 0.2.2 or newer): go to the
+1. **`sde`**, the transfer tool (**version 0.3.5 or later**: older versions do
+   not use RTS/CTS flow control by default): go to the
    [SharpDataExchange releases page](https://github.com/tinue/SharpDataExchange/releases),
    download the archive for your system, and unpack it. Put `bin/sde`
    somewhere on your `PATH`, or simply run it from where you unpacked it.
@@ -86,14 +90,23 @@ port by typing these lines:
 NEW"S0:",&1000
 SETCOM"COM1:",9600,8,N,1,N,N
 OUTSTAT"COM1:"
-SNDSTAT"COM1:",28
-RCVSTAT"COM1:",28
-INIT"COM1:",8192
+SNDSTAT"COM1:",28,0
+RCVSTAT"COM1:",28,0
+INIT"COM1:",1024
 ```
 
-The `28` in `SNDSTAT` and `RCVSTAT` switches off RTS/CTS hardware flow control.
-Many USB-to-serial adapters do not handle it reliably, so `sde` (version 0.2.2
-or newer) paces the transfer itself instead.
+What these lines do:
+
+- `OUTSTAT"COM1:"` switches the PC-1600's RTS line to automatic mode. RTS then
+  tells your computer when the PC-1600 can take more data. This is the hardware
+  flow control that `sde` uses by default.
+- `SNDSTAT"COM1:",28,0` and `RCVSTAT"COM1:",28,0` tell the PC-1600 not to
+  wait for or check any handshake line itself, and to wait forever. Type the
+  `,0` at the end: without it, the PC-1600 gives up after about 30 seconds with
+  `ERROR 142` (or `ERROR 143` when sending).
+- `INIT"COM1:",1024` sets the receive buffer to 1 KB. Flow control or pacing
+  keeps it from overflowing, so it does not need to be larger. This has been
+  tested on a real PC-1600 with a file of more than 50 KB.
 
 ## 4. Load the dumper onto the PC-1600
 
@@ -104,13 +117,25 @@ BLOAD"COM1:"
 ```
 
 **On your computer**, send the program (adjust the path to where you saved the
-file). Do this right after pressing Enter on the PC-1600:
+file). There is no hurry: with the timeout set to `0` the PC-1600 waits as long
+as needed.
 
 ```
 sde put --device pc1600 pc1600-rom-dumper-with-header.bin -v
 ```
 
 When the transfer is done, the dumper starts by itself.
+
+If `sde` warns that the PC-1600 never raises CTS, the RTS line does not reach
+your adapter (wrong or missing wire, or wrong polarity). Press `BREAK` on the
+PC-1600, type `BLOAD"COM1:"` again, and send the program without flow control
+instead. `sde` then paces the transfer itself:
+
+```
+sde put --device pc1600 --no-flowcontrol pc1600-rom-dumper-with-header.bin -v
+```
+
+Use `--no-flowcontrol` for the `sde get` commands in step 5 as well.
 
 > If `sde` complains that it cannot find the serial port, add
 > `--port <name>` to the command. The name looks like `/dev/cu.usbserial-XXXX`
@@ -202,15 +227,19 @@ the missing `4` version or the older `130` one, whichever your `PEEK` showed.
   (`PC1600-P1-B4-CE1600P.BIN` and `PC1600-P1-B5-CE1600P-OR-F.BIN`, kept in
   `dumps/ce1600p/`) come out
   filled with `FF`. That is normal.
-- **`ERROR 142` on the PC-1600.** Most likely one of the serial setup commands
-  from step 3 went wrong, or the PC-1600 was reset in the meantime. Type the
-  setup commands again (`SETCOM`, `OUTSTAT`, `SNDSTAT`, `RCVSTAT`, `INIT`) and
-  retry. Make sure `SNDSTAT` and `RCVSTAT` use `28`, and that your `sde` is
-  version 0.2.2 or newer.
-- **Hardware flow control (optional).** It is off by default because it does not
-  work on many systems. If you want to try it, add `--flowcontrol` to the `sde`
-  commands and use `24` instead of `28` in `SNDSTAT` and `RCVSTAT`. The two
-  sides must match.
+- **`ERROR 142` on the PC-1600** while loading the dumper. There are two
+  possible causes:
+  - **No data arrived for a while, and a timeout was set.** Check that
+    `RCVSTAT` ends in `,28,0`. The setup is lost when the PC-1600 is switched
+    off, also by its automatic power-off, so type the step 3 commands again if
+    in doubt.
+  - **Data was lost.** This happens when the flow control does not work.
+    Retry with `--no-flowcontrol`. If it still fails, use a bigger buffer,
+    `INIT"COM1:",4096`: that holds the whole dumper, so nothing can be lost.
+- **Flow control.** `sde` uses RTS/CTS hardware flow control by default.
+  `--no-flowcontrol` switches it off and sends slowly instead (paced), for
+  cables or adapters without working handshake lines. On the PC-1600 the setup
+  is the same in both cases.
 - **Start the receiver first.** The PC-1600 does not buffer: if `sde get` is
   not already waiting when you press the key, data is lost.
 - **Stopping the dumper.** It has no quit key. To abort a send, press `BREAK`
